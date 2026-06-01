@@ -1,0 +1,71 @@
+name: 🚀 Lotus Kernel Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      DEVICE_NAME:
+        description: '📦 Zip Name'
+        required: true
+        default: 'lotus-kernel'
+      ANDROID_VERSION:
+        description: '🤖 Android Version'
+        required: true
+        default: 'p-oss'
+        type: choice
+        options:
+        - t-oss
+        - s-oss
+        - p-oss
+        - q-oss
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: 🏗️ Build ${{ github.event.inputs.DEVICE_NAME }}
+    runs-on: ubuntu-22.04
+    env:
+      GITHUB_WORKSPACE: ${{ github.workspace }}
+
+    steps:
+    - name: 📥 Checkout Source
+      uses: actions/checkout@v4
+
+    - name: 🛠️ Setup Build Environment
+      run: |
+        sudo apt-get update && sudo apt-get install -y git ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python2 python3
+
+    - name: ⚙️ Compile Kernel
+      run: |
+        chmod +x build
+        ./build
+
+    - name: 📦 Prepare Artifacts
+      id: props
+      run: |
+        echo "date=$(TZ=Asia/Manila date +'%d-%b-%Y | %I:%M %p')" >> $GITHUB_OUTPUT
+        ZIP_PATH=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+        if [ -f "$ZIP_PATH" ]; then
+          echo "ZIP_FILE_PATH=$ZIP_PATH" >> $GITHUB_ENV
+        else
+          echo "::error:: ZIP file not found!"
+          exit 1
+        fi
+
+    - name: 💎 Create Release
+      uses: ncipollo/release-action@v1.14.0
+      with:
+        artifacts: "${{ env.ZIP_FILE_PATH }}"
+        name: "✨ Lotus Kernel | ${{ github.event.inputs.DEVICE_NAME }} | ${{ steps.props.outputs.date }}"
+        # Tag name must not contain spaces or special symbols like '|'
+        tag: "build-${{ github.run_id }}"
+        token: ${{ secrets.GITHUB_TOKEN }}
+        body: |
+          ### 🛠️ Lotus Kernel Build Report
+          | Attribute | Details |
+          | :--- | :--- |
+          | **Device** | `${{ github.event.inputs.DEVICE_NAME }}` |
+          | **OS Version** | `${{ github.event.inputs.ANDROID_VERSION }}` |
+          | **Build Time** | `${{ steps.props.outputs.date }}` |
+          | **Status** | ✅ Success |
