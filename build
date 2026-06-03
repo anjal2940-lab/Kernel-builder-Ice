@@ -8,19 +8,18 @@ set -e
 
 # --- Configuration ---
 KERNEL_SOURCE="https://github.com/ansh-m14x/Kernel_CPH2015"
-KERNEL_BRANCH="RKSU"
+KERNEL_BRANCH="lotus-kernel"
 KERNEL_DEFCONFIG="19581_defconfig"
 
 # --- Paths ---
 WORK="${GITHUB_WORKSPACE}"
 DATE=$(date +"%Y%m%d-%H")
 ANYKERNEL_DIR="${WORK}/AK3_Final"
-# Point directly to the folder in your repo
 AK_SOURCE_DIR="${WORK}/any-kernel(OP4C7D)"
+KERNEL_SRC="${WORK}/myKernel"
 
 # --- Setup Environment ---
 echo ">> Setting up dependencies..."
-# Only clone what is absolutely necessary
 [ ! -d "${WORK}/clang" ] && git clone --depth=1 https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-5407736 "${WORK}/clang"
 [ ! -d "${WORK}/x64" ] && git clone --depth=1 https://github.com/KudProject/aarch64-linux-android-4.9 "${WORK}/x64"
 [ ! -d "${WORK}/x32" ] && git clone --depth=1 https://github.com/KudProject/arm-linux-androideabi-4.9 "${WORK}/x32"
@@ -28,16 +27,9 @@ echo ">> Setting up dependencies..."
 export PATH="${WORK}/clang/bin:${WORK}/x64/bin:${WORK}/x32/bin:${PATH}"
 export ARCH=arm64
 
-# --- Automatically find the Kernel Source ---
-KERNEL_SRC=$(find "${WORK}" -maxdepth 2 -type d -name "arch" | head -n 1 | sed 's|/arch||')
-
-if [ -z "${KERNEL_SRC}" ]; then
-    echo ">> Kernel source not found, cloning..."
-    KERNEL_SRC="${WORK}/myKernel"
-    git clone --depth=1 "${KERNEL_SOURCE}" -b "${KERNEL_BRANCH}" "${KERNEL_SRC}"
-fi
-
-echo ">> Found Kernel Source at: ${KERNEL_SRC}"
+echo ">> Cloning Kernel Source..."
+rm -rf "${KERNEL_SRC}"
+git clone --depth=1 "${KERNEL_SOURCE}" -b "${KERNEL_BRANCH}" "${KERNEL_SRC}"
 
 # --- Build Function ---
 build_kernel() {
@@ -58,10 +50,7 @@ package_zip() {
     rm -rf "${ANYKERNEL_DIR}"
     mkdir -p "${ANYKERNEL_DIR}"
     
-    # Copy from the folder present in your repository root
     cp -r "${AK_SOURCE_DIR}/"* "${ANYKERNEL_DIR}/"
-    
-    # Copy kernel image
     cp "${KERNEL_SRC}/out/arch/arm64/boot/Image.gz-dtb" "${ANYKERNEL_DIR}/"
     
     cd "${ANYKERNEL_DIR}"
