@@ -15,23 +15,24 @@ KERNEL_DEFCONFIG="19581_defconfig"
 WORK="${GITHUB_WORKSPACE}"
 DATE=$(date +"%Y%m%d-%H")
 ANYKERNEL_DIR="${WORK}/AK3_Final"
+# Point directly to the folder in your repo
+AK_SOURCE_DIR="${WORK}/any-kernel(OP4C7D)"
 
 # --- Setup Environment ---
 echo ">> Setting up dependencies..."
+# Only clone what is absolutely necessary
 [ ! -d "${WORK}/clang" ] && git clone --depth=1 https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-5407736 "${WORK}/clang"
 [ ! -d "${WORK}/x64" ] && git clone --depth=1 https://github.com/KudProject/aarch64-linux-android-4.9 "${WORK}/x64"
 [ ! -d "${WORK}/x32" ] && git clone --depth=1 https://github.com/KudProject/arm-linux-androideabi-4.9 "${WORK}/x32"
-[ ! -d "${WORK}/AK_Repo" ] && git clone --depth=1 https://github.com/ansh-m14x/Action-Kernel-Builder "${WORK}/AK_Repo"
 
 export PATH="${WORK}/clang/bin:${WORK}/x64/bin:${WORK}/x32/bin:${PATH}"
 export ARCH=arm64
 
 # --- Automatically find the Kernel Source ---
-KERNEL_SRC=$(find "${WORK}" -type d -name "arch" | grep -m1 "arm64" | sed 's|/arch/arm64||')
+KERNEL_SRC=$(find "${WORK}" -maxdepth 2 -type d -name "arch" | head -n 1 | sed 's|/arch||')
 
-# Fallback: if not found by find, try the standard clone path
 if [ -z "${KERNEL_SRC}" ]; then
-    echo ">> Kernel source not found via search, cloning..."
+    echo ">> Kernel source not found, cloning..."
     KERNEL_SRC="${WORK}/myKernel"
     git clone --depth=1 "${KERNEL_SOURCE}" -b "${KERNEL_BRANCH}" "${KERNEL_SRC}"
 fi
@@ -57,16 +58,15 @@ package_zip() {
     rm -rf "${ANYKERNEL_DIR}"
     mkdir -p "${ANYKERNEL_DIR}"
     
-    # Copy AnyKernel files
-    cp -r "${WORK}/AK_Repo/any-kernel(OP4C7D)/"* "${ANYKERNEL_DIR}/"
+    # Copy from the folder present in your repository root
+    cp -r "${AK_SOURCE_DIR}/"* "${ANYKERNEL_DIR}/"
     
     # Copy kernel image
     cp "${KERNEL_SRC}/out/arch/arm64/boot/Image.gz-dtb" "${ANYKERNEL_DIR}/"
     
     cd "${ANYKERNEL_DIR}"
-    zip -r9 "Lotus-Kernel-${DATE}.zip" ./* || { echo "!! Zip creation failed"; exit 1; }
+    zip -r9 "Lotus-Kernel-${DATE}.zip" ./* 
     
-    # Move zip to root so GitHub Actions finds it easily
     mv "Lotus-Kernel-${DATE}.zip" "${WORK}/"
     echo ">> Success: Lotus-Kernel-${DATE}.zip is ready!"
 }
