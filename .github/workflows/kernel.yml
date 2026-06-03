@@ -40,25 +40,32 @@ jobs:
       run: |
         chmod +x build
         ./build
-
     - name: 📦 Prepare Artifacts
       id: props
       run: |
         echo "date=$(TZ=Asia/Manila date +'%d-%b-%Y | %I:%M %p')" >> $GITHUB_OUTPUT
         ZIP_PATH=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+        LOG_PATH="build.log"
+        
         if [ -f "$ZIP_PATH" ]; then
           echo "ZIP_FILE_PATH=$ZIP_PATH" >> $GITHUB_ENV
         else
           echo "::error:: ZIP file not found!"
           exit 1
         fi
+        
+        if [ -f "$LOG_PATH" ]; then
+          echo "LOG_FILE_PATH=$LOG_PATH" >> $GITHUB_ENV
+        else
+          echo "::warning:: build.log not found, skipping log upload."
+        fi
 
     - name: 💎 Create Release
       uses: ncipollo/release-action@v1.14.0
       with:
-        artifacts: "${{ env.ZIP_FILE_PATH }}"
+        # This will upload both files if the log exists, or just the zip if not
+        artifacts: "${{ env.ZIP_FILE_PATH }}${{ env.LOG_FILE_PATH && format(',{0}', env.LOG_FILE_PATH) || '' }}"
         name: "✨ Lotus Kernel | ${{ github.event.inputs.DEVICE_NAME }} | ${{ steps.props.outputs.date }}"
-        # Tag name must not contain spaces or special symbols like '|'
         tag: "build-${{ github.run_id }}"
         token: ${{ secrets.GITHUB_TOKEN }}
         body: |
@@ -69,4 +76,3 @@ jobs:
           | **OS Version** | `${{ github.event.inputs.ANDROID_VERSION }}` |
           | **Build Time** | `${{ steps.props.outputs.date }}` |
           | **Status** | ✅ Success |
-
