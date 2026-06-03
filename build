@@ -8,7 +8,7 @@ set -e
 
 # --- Configuration ---
 KERNEL_SOURCE="https://github.com/ansh-m14x/Kernel_CPH2015"
-KERNEL_BRANCH="lotus-kernel"
+KERNEL_BRANCH="RKSU"
 KERNEL_DEFCONFIG="19581_defconfig"
 
 # --- Paths ---
@@ -17,6 +17,7 @@ DATE=$(date +"%Y%m%d-%H")
 ANYKERNEL_DIR="${WORK}/AK3_Final"
 AK_SOURCE_DIR="${WORK}/any-kernel(OP4C7D)"
 KERNEL_SRC="${WORK}/myKernel"
+LOG_FILE="${WORK}/build.log"
 
 # --- Setup Environment ---
 echo ">> Setting up dependencies..."
@@ -35,13 +36,17 @@ git clone --depth=1 "${KERNEL_SOURCE}" -b "${KERNEL_BRANCH}" "${KERNEL_SRC}"
 build_kernel() {
     echo ">> Starting Compilation..."
     cd "${KERNEL_SRC}"
-    make O=out ARCH=arm64 "${KERNEL_DEFCONFIG}"
-    make -j"$(nproc --all)" O=out \
-         ARCH=arm64 \
-         CC=clang \
-         CLANG_TRIPLE=aarch64-linux-gnu- \
-         CROSS_COMPILE=aarch64-linux-android- \
-         CROSS_COMPILE_ARM32=arm-linux-androideabi-
+    
+    # Capture build process to log file
+    {
+        make O=out ARCH=arm64 "${KERNEL_DEFCONFIG}"
+        make -j"$(nproc --all)" O=out \
+             ARCH=arm64 \
+             CC=clang \
+             CLANG_TRIPLE=aarch64-linux-gnu- \
+             CROSS_COMPILE=aarch64-linux-android- \
+             CROSS_COMPILE_ARM32=arm-linux-androideabi-
+    } 2>&1 | tee "${LOG_FILE}"
 }
 
 # --- Package Function ---
@@ -64,6 +69,6 @@ package_zip() {
 if build_kernel; then
     package_zip
 else
-    echo "!! Build Failed."
+    echo "!! Build Failed. Check build.log"
     exit 1
 fi
