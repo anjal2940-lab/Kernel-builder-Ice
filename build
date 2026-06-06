@@ -8,7 +8,7 @@ set -e
 
 # --- Configuration ---
 KERNEL_SOURCE="https://github.com/ansh-m14x/Kernel_CPH2015"
-KERNEL_BRANCH="drv"
+KERNEL_BRANCH="lotus-staging"
 KERNEL_DEFCONFIG="19581_defconfig"
 
 # --- Paths ---
