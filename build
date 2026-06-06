@@ -21,7 +21,7 @@ LOG_FILE="${WORK}/build.log"
 
 # --- Setup Environment ---
 echo ">> Setting up dependencies..."
-[ ! -d "${WORK}/clang" ] && git clone --depth=1 https://github.com/techyminati/android_prebuilts_clang_host_linux-x86_clang-6443078 "${WORK}/clang"
+[ ! -d "${WORK}/clang" ] && git clone --depth=1 https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-6207600 "${WORK}/clang"
 [ ! -d "${WORK}/x64" ] && git clone --depth=1 https://github.com/KudProject/aarch64-linux-android-4.9 "${WORK}/x64"
 [ ! -d "${WORK}/x32" ] && git clone --depth=1 https://github.com/KudProject/arm-linux-androideabi-4.9 "${WORK}/x32"
 
