@@ -1,27 +1,24 @@
 #!/bin/sh
 
 # ==================================================
-#           Lotus Kernel Build Script
+#           Ice Kernel Build Script (Redmi A1)
 # ==================================================
 
 set -e
 
 # --- Configuration ---
-KERNEL_SOURCE="https://github.com/ansh-m14x/Kernel_CPH2015"
-KERNEL_BRANCH="lotus-staging"
-KERNEL_DEFCONFIG="19581_defconfig"
+KERNEL_SOURCE="https://github.com/anjal2940-lab/Ice-kernel-source"
+KERNEL_BRANCH="main"
+KERNEL_DEFCONFIG="defconfig" # TODO: Change this to your actual defconfig file name if needed
 
 # --- Paths ---
 WORK="${GITHUB_WORKSPACE}"
-DATE=$(date +"%Y%m%d-%H")
-ANYKERNEL_DIR="${WORK}/AK3_Final"
-AK_SOURCE_DIR="${WORK}/any-kernel(OP4C7D)"
 KERNEL_SRC="${WORK}/myKernel"
 LOG_FILE="${WORK}/build.log"
 
 # --- Setup Environment ---
 echo ">> Setting up dependencies..."
-[ ! -d "${WORK}/clang" ] && git clone --depth=1 https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-5407736 "${WORK}/clang"
+[ ! -d "${WORK}/clang" ] && git clone --depth=1 https://github.com/techyminati/android_prebuilts_clang_host_linux-x86_clang-6443078 "${WORK}/clang"
 [ ! -d "${WORK}/x64" ] && git clone --depth=1 https://github.com/KudProject/aarch64-linux-android-4.9 "${WORK}/x64"
 [ ! -d "${WORK}/x32" ] && git clone --depth=1 https://github.com/KudProject/arm-linux-androideabi-4.9 "${WORK}/x32"
 
@@ -49,25 +46,10 @@ build_kernel() {
     } 2>&1 | tee "${LOG_FILE}"
 }
 
-# --- Package Function ---
-package_zip() {
-    echo ">> Creating Flashable ZIP..."
-    rm -rf "${ANYKERNEL_DIR}"
-    mkdir -p "${ANYKERNEL_DIR}"
-    
-    cp -r "${AK_SOURCE_DIR}/"* "${ANYKERNEL_DIR}/"
-    cp "${KERNEL_SRC}/out/arch/arm64/boot/Image.gz-dtb" "${ANYKERNEL_DIR}/"
-    
-    cd "${ANYKERNEL_DIR}"
-    zip -r9 "Lotus-Kernel-${DATE}.zip" ./* 
-    
-    mv "Lotus-Kernel-${DATE}.zip" "${WORK}/"
-    echo ">> Success: Lotus-Kernel-${DATE}.zip is ready!"
-}
-
 # --- Execution ---
 if build_kernel; then
-    package_zip
+    echo ">> Success: Kernel compiled successfully!"
+    echo ">> Your compiled build files are available in: ${KERNEL_SRC}/out/arch/arm64/boot/"
 else
     echo "!! Build Failed. Check build.log"
     exit 1
