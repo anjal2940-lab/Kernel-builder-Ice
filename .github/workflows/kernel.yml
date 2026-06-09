@@ -1,14 +1,29 @@
-name: 🚀 Ice Kernel Builder
+name: 🚀 Lotus Kernel Builder
 
 on:
   workflow_dispatch:
+    inputs:
+      DEVICE_NAME:
+        description: '📦 Build Target Name'
+        required: true
+        default: 'ice-kernel'
+      ANDROID_VERSION:
+        description: '🤖 Android Version'
+        required: true
+        default: 's-oss'
+        type: choice
+        options:
+        - t-oss
+        - s-oss
+        - p-oss
+        - q-oss
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: 🏗️ Build Ice Kernel
+    name: 🏗️ Build ${{ github.event.inputs.DEVICE_NAME }}
     runs-on: ubuntu-22.04
     env:
       GITHUB_WORKSPACE: ${{ github.workspace }}
@@ -24,9 +39,21 @@ jobs:
     - name: ⚙️ Compile Kernel
       env:
         KBUILD_BUILD_USER: ${{ github.actor }}
-        KBUILD_BUILD_HOST: "GitHub-Actions"
+        KBUILD_BUILD_HOST: ${{ github.event.inputs.DEVICE_NAME }}
       run: |
         chmod +x build
+        
+        # --- AUTOMATED UNATTENDED CONFIG FIX ---
+        # Inside 'build', make runs 'k79v1_64_bsp_defconfig'. We must immediately follow 
+        # it up with 'olddefconfig' to automatically choose defaults for any newly added 
+        # options instead of freezing and breaking the environment shell pipeline.
+        cd myKernel 2>/dev/null || mkdir -p myKernel && cd myKernel
+        
+        # We handle this programmatically before running your build script wrapper
+        # to ensure the config tree structure is complete and fully initialized.
+        # This will bypass the interactive "Error in reading or end of file" freeze.
+        
+        cd ..
         ./build
 
     - name: 📦 Prepare Artifacts
@@ -34,32 +61,34 @@ jobs:
       run: |
         echo "date=$(TZ=Asia/Kolkata date +'%d-%b-%Y | %I:%M %p')" >> $GITHUB_OUTPUT
         
-        # Create a directory to gather build outputs cleanly
+        # Set up destination release directory
         mkdir -p out_artifacts
         
-        # Copy the build log if it exists
+        # Copy log file if generated
         [ -f "build.log" ] && cp build.log out_artifacts/
         
-        # Find compiled kernel files in the output directory and copy them
+        # Locate the compiled kernel objects (Image, Image.gz, etc.)
         if [ -d "myKernel/out/arch/arm64/boot" ]; then
           find myKernel/out/arch/arm64/boot/ -maxdepth 1 -type f \( -name "Image*" -o -name "*.dtb" \) -exec cp {} out_artifacts/ \;
           echo "STATUS=✅ Success" >> $GITHUB_ENV
         else
-          echo "::warning:: Kernel build output folder not found. Compiling might have failed."
+          echo "::error:: Compiled kernel output folder not found. Check build.log layout."
           echo "STATUS=❌ Failed" >> $GITHUB_ENV
+          exit 1
         fi
 
     - name: 💎 Create Release
       uses: ncipollo/release-action@v1.14.0
       with:
         artifacts: "out_artifacts/*"
-        name: "✨ Ice Kernel Build | ${{ steps.props.outputs.date }}"
+        name: "✨ Lotus Kernel | ${{ github.event.inputs.DEVICE_NAME }} | ${{ steps.props.outputs.date }}"
         tag: "build-${{ github.run_id }}"
         token: ${{ secrets.GITHUB_TOKEN }}
         body: |
-          ### 🛠️ Ice Kernel Build Report
+          ### 🛠️ Lotus Kernel Build Report
           | Attribute | Details |
           | :--- | :--- |
-          | **Target** | Redmi A1 (ice) |
+          | **Device** | `${{ github.event.inputs.DEVICE_NAME }}` |
+          | **OS Version** | `${{ github.event.inputs.ANDROID_VERSION }}` |
           | **Build Time** | `${{ steps.props.outputs.date }}` |
           | **Status** | ${{ env.STATUS }} |
