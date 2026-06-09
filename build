@@ -9,7 +9,7 @@ set -e
 # --- Configuration ---
 KERNEL_SOURCE="https://github.com/anjal2940-lab/Ice-kernel-source"
 KERNEL_BRANCH="main"
-KERNEL_DEFCONFIG="k79v1_64_defconfig" # TODO: Change this to your actual defconfig file name if needed
+KERNEL_DEFCONFIG="ice_defconfig" # TODO: Change this to your actual defconfig file name if needed
 
 # --- Paths ---
 WORK="${GITHUB_WORKSPACE}"
