@@ -43,18 +43,12 @@ jobs:
       run: |
         chmod +x build
         
-        # --- AUTOMATED UNATTENDED CONFIG FIX ---
-        # Inside 'build', make runs 'k79v1_64_bsp_defconfig'. We must immediately follow 
-        # it up with 'olddefconfig' to automatically choose defaults for any newly added 
-        # options instead of freezing and breaking the environment shell pipeline.
-        cd myKernel 2>/dev/null || mkdir -p myKernel && cd myKernel
+        # Method 1: Tell Kconfig to bypass interactive timestamp validations
+        export KCONFIG_NOT_TIMESTAMP=1
         
-        # We handle this programmatically before running your build script wrapper
-        # to ensure the config tree structure is complete and fully initialized.
-        # This will bypass the interactive "Error in reading or end of file" freeze.
-        
-        cd ..
-        ./build
+        # Method 2: Stream constant carriage returns into the wrapper execution line. 
+        # This auto-accepts default choices whenever new config prompts are tripped.
+        yes "" | ./build
 
     - name: 📦 Prepare Artifacts
       id: props
@@ -92,3 +86,4 @@ jobs:
           | **OS Version** | `${{ github.event.inputs.ANDROID_VERSION }}` |
           | **Build Time** | `${{ steps.props.outputs.date }}` |
           | **Status** | ${{ env.STATUS }} |
+
