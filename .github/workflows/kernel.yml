@@ -86,4 +86,3 @@ jobs:
           | **OS Version** | `${{ github.event.inputs.ANDROID_VERSION }}` |
           | **Build Time** | `${{ steps.props.outputs.date }}` |
           | **Status** | ${{ env.STATUS }} |
-
