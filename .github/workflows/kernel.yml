@@ -1,4 +1,4 @@
-Name: 🚀 Lotus Kernel Builder
+name: 🚀 Lotus Kernel Builder
 on:
   workflow_dispatch:
     inputs:
@@ -54,7 +54,7 @@ jobs:
         # Copy log file if generated
         [ -f "build.log" ] && cp build.log out_artifacts/
         
-        # CHANGED: Reconfigured paths to track 32-bit output (arch/arm/boot) and collect zImage files
+        # Targets 32-bit output path structures (arch/arm/boot) for your zImage builds
         if [ -d "myKernel/out/arch/arm/boot" ]; then
           find myKernel/out/arch/arm/boot/ -maxdepth 1 -type f \( -name "zImage*" -o -name "Image*" -o -name "*.dtb" \) -exec cp {} out_artifacts/ \;
           echo "STATUS=✅ Success" >> $GITHUB_ENV
