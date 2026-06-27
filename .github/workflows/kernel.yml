@@ -1,5 +1,4 @@
-name: 🚀 Lotus Kernel Builder
-
+Name: 🚀 Lotus Kernel Builder
 on:
   workflow_dispatch:
     inputs:
@@ -17,25 +16,20 @@ on:
         - s-oss
         - p-oss
         - q-oss
-
 permissions:
   contents: write
-
 jobs:
   build:
     name: 🏗️ Build ${{ github.event.inputs.DEVICE_NAME }}
     runs-on: ubuntu-22.04
     env:
       GITHUB_WORKSPACE: ${{ github.workspace }}
-
     steps:
     - name: 📥 Checkout Source
       uses: actions/checkout@v4
-
     - name: 🛠️ Setup Build Environment
       run: |
         sudo apt-get update && sudo apt-get install -y git ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python3
-
     - name: ⚙️ Compile Kernel
       env:
         KBUILD_BUILD_USER: ${{ github.actor }}
@@ -49,7 +43,6 @@ jobs:
         # Method 2: Stream constant carriage returns into the wrapper execution line. 
         # This auto-accepts default choices whenever new config prompts are tripped.
         yes "" | ./build
-
     - name: 📦 Prepare Artifacts
       id: props
       run: |
@@ -61,16 +54,15 @@ jobs:
         # Copy log file if generated
         [ -f "build.log" ] && cp build.log out_artifacts/
         
-        # Locate the compiled kernel objects (Image, Image.gz, etc.)
-        if [ -d "myKernel/out/arch/arm64/boot" ]; then
-          find myKernel/out/arch/arm64/boot/ -maxdepth 1 -type f \( -name "Image*" -o -name "*.dtb" \) -exec cp {} out_artifacts/ \;
+        # CHANGED: Reconfigured paths to track 32-bit output (arch/arm/boot) and collect zImage files
+        if [ -d "myKernel/out/arch/arm/boot" ]; then
+          find myKernel/out/arch/arm/boot/ -maxdepth 1 -type f \( -name "zImage*" -o -name "Image*" -o -name "*.dtb" \) -exec cp {} out_artifacts/ \;
           echo "STATUS=✅ Success" >> $GITHUB_ENV
         else
           echo "::error:: Compiled kernel output folder not found. Check build.log layout."
           echo "STATUS=❌ Failed" >> $GITHUB_ENV
           exit 1
         fi
-
     - name: 💎 Create Release
       uses: ncipollo/release-action@v1.14.0
       with:
@@ -80,9 +72,10 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         body: |
           ### 🛠️ Lotus Kernel Build Report
-          | Attribute | Details |
-          | :--- | :--- |
-          | **Device** | `${{ github.event.inputs.DEVICE_NAME }}` |
-          | **OS Version** | `${{ github.event.inputs.ANDROID_VERSION }}` |
-          | **Build Time** | `${{ steps.props.outputs.date }}` |
-          | **Status** | ${{ env.STATUS }} |
+
+| Attribute | Details |
+| :--- | :--- |
+| **Device** | `${{ github.event.inputs.DEVICE_NAME }}` |
+| **OS Version** | `${{ github.event.inputs.ANDROID_VERSION }}` |
+| **Build Time** | `${{ steps.props.outputs.date }}` |
+| **Status** | ${{ env.STATUS }} |
