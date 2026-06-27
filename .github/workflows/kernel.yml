@@ -1,4 +1,5 @@
 name: 🚀 Lotus Kernel Builder
+
 on:
   workflow_dispatch:
     inputs:
@@ -16,8 +17,10 @@ on:
         - s-oss
         - p-oss
         - q-oss
+
 permissions:
   contents: write
+
 jobs:
   build:
     name: 🏗️ Build ${{ github.event.inputs.DEVICE_NAME }}
@@ -36,31 +39,18 @@ jobs:
         KBUILD_BUILD_HOST: ${{ github.event.inputs.DEVICE_NAME }}
       run: |
         chmod +x build
-        
-        # Method 1: Tell Kconfig to bypass interactive timestamp validations
         export KCONFIG_NOT_TIMESTAMP=1
-        
-        # Method 2: Stream constant carriage returns into the wrapper execution line. 
-        # This auto-accepts default choices whenever new config prompts are tripped.
         yes "" | ./build
     - name: 📦 Prepare Artifacts
       id: props
       run: |
         echo "date=$(TZ=Asia/Kolkata date +'%d-%b-%Y | %I:%M %p')" >> $GITHUB_OUTPUT
-        
-        # Set up destination release directory
         mkdir -p out_artifacts
-        
-        # Copy log file if generated
         [ -f "build.log" ] && cp build.log out_artifacts/
-        
-        # Targets 32-bit output path structures (arch/arm/boot) for your zImage builds
         if [ -d "myKernel/out/arch/arm/boot" ]; then
           find myKernel/out/arch/arm/boot/ -maxdepth 1 -type f \( -name "zImage*" -o -name "Image*" -o -name "*.dtb" \) -exec cp {} out_artifacts/ \;
-          echo "STATUS=✅ Success" >> $GITHUB_ENV
         else
           echo "::error:: Compiled kernel output folder not found. Check build.log layout."
-          echo "STATUS=❌ Failed" >> $GITHUB_ENV
           exit 1
         fi
     - name: 💎 Create Release
@@ -70,12 +60,4 @@ jobs:
         name: "✨ Lotus Kernel | ${{ github.event.inputs.DEVICE_NAME }} | ${{ steps.props.outputs.date }}"
         tag: "build-${{ github.run_id }}"
         token: ${{ secrets.GITHUB_TOKEN }}
-        body: |
-          ### 🛠️ Lotus Kernel Build Report
-
-| Attribute | Details |
-| :--- | :--- |
-| **Device** | `${{ github.event.inputs.DEVICE_NAME }}` |
-| **OS Version** | `${{ github.event.inputs.ANDROID_VERSION }}` |
-| **Build Time** | `${{ steps.props.outputs.date }}` |
-| **Status** | ${{ env.STATUS }} |
+        body: "Automated kernel compilation build completed successfully."
