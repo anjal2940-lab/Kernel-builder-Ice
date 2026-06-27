@@ -9,7 +9,7 @@ set -e
 # --- Configuration ---
 KERNEL_SOURCE="https://github.com/anjal2940-lab/Ice-kernel-source"
 KERNEL_BRANCH="main"
-KERNEL_DEFCONFIG="ice_defconfig" # Ensure this config file supports 32-bit inside arch/arm/configs/
+KERNEL_DEFCONFIG="ice_defconfig"
 
 # --- Paths ---
 WORK="${GITHUB_WORKSPACE}"
@@ -24,8 +24,8 @@ echo ">> Setting up dependencies..."
 
 export PATH="${WORK}/clang/bin:${WORK}/x64/bin:${WORK}/x32/bin:${PATH}"
 
-# Target system architecture set to 32-bit ARM
-export ARCH=arm
+# Global target architecture locked back to 64-bit ARM
+export ARCH=arm64
 
 echo ">> Cloning Kernel Source..."
 rm -rf "${KERNEL_SRC}"
@@ -38,27 +38,25 @@ build_kernel() {
     
     # Capture build process to log file
     {
-        # Set up the configuration using 32-bit target architecture parameters
-        make O=out ARCH=arm "${KERNEL_DEFCONFIG}"
+        # Set up configuration target for 64-bit defconfig files
+        make O=out ARCH=arm64 "${KERNEL_DEFCONFIG}"
         
-        # Compile using BFD linker specifically to override the vDSO alignment issue
+        # Build using the matching 64-bit toolchain architectures
         make -j"$(nproc --all)" O=out \
-             ARCH=arm \
+             ARCH=arm64 \
              CC=clang \
-             HOSTCC=gcc \
-             HOSTCXX=g++ \
-             LD=arm-linux-androideabi-ld.bfd \
-             CLANG_TRIPLE=arm-linux-gnueabi- \
-             CROSS_COMPILE=arm-linux-androideabi-
+             CLANG_TRIPLE=aarch64-linux-gnu- \
+             CROSS_COMPILE=aarch64-linux-android- \
+             CROSS_COMPILE_ARM32=arm-linux-androideabi-
     } 2>&1 | tee "${LOG_FILE}"
 }
 
 # --- Execution ---
 if build_kernel; then
     echo ">> Success: Kernel compiled successfully!"
-    # Output path directs directly to the newly produced 32-bit zImage files
-    echo ">> Your compiled build files are available in: ${KERNEL_SRC}/out/arch/arm/boot/"
+    echo ">> Your compiled build files are available in: ${KERNEL_SRC}/out/arch/arm64/boot/"
 else
     echo "!! Build Failed. Check build.log"
     exit 1
 fi
+
