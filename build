@@ -24,7 +24,6 @@ echo ">> Setting up dependencies..."
 
 export PATH="${WORK}/clang/bin:${WORK}/x64/bin:${WORK}/x32/bin:${PATH}"
 
-# Global target architecture locked back to 64-bit ARM
 export ARCH=arm64
 
 echo ">> Cloning Kernel Source..."
@@ -38,13 +37,13 @@ build_kernel() {
     
     # Capture build process to log file
     {
-        # Set up configuration target for 64-bit defconfig files
         make O=out ARCH=arm64 "${KERNEL_DEFCONFIG}"
         
-        # Build using the matching 64-bit toolchain architectures
+        # FIXED: Added LD=ld.lld to bypass the aarch64-linux-android-ld data encoding error
         make -j"$(nproc --all)" O=out \
              ARCH=arm64 \
              CC=clang \
+             LD=ld.lld \
              CLANG_TRIPLE=aarch64-linux-gnu- \
              CROSS_COMPILE=aarch64-linux-android- \
              CROSS_COMPILE_ARM32=arm-linux-androideabi-
@@ -59,4 +58,3 @@ else
     echo "!! Build Failed. Check build.log"
     exit 1
 fi
-
