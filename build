@@ -9,7 +9,7 @@ set -e
 # --- Configuration ---
 KERNEL_SOURCE="https://github.com/anjal2940-lab/Ice-kernel-source"
 KERNEL_BRANCH="main"
-KERNEL_DEFCONFIG="ice_defconfig" # TODO: Change this to your actual defconfig file name if needed
+KERNEL_DEFCONFIG="ice_defconfig" # Ensure this config file supports 32-bit inside arch/arm/configs/
 
 # --- Paths ---
 WORK="${GITHUB_WORKSPACE}"
@@ -23,7 +23,9 @@ echo ">> Setting up dependencies..."
 [ ! -d "${WORK}/x32" ] && git clone --depth=1 https://github.com/KudProject/arm-linux-androideabi-4.9 "${WORK}/x32"
 
 export PATH="${WORK}/clang/bin:${WORK}/x64/bin:${WORK}/x32/bin:${PATH}"
-export ARCH=arm64
+
+# CHANGED: Shift target system global architecture from arm64 to arm
+export ARCH=arm
 
 echo ">> Cloning Kernel Source..."
 rm -rf "${KERNEL_SRC}"
@@ -36,20 +38,21 @@ build_kernel() {
     
     # Capture build process to log file
     {
-        make O=out ARCH=arm64 "${KERNEL_DEFCONFIG}"
+        # CHANGED: Build target directory flags flipped from arm64 to arm
+        make O=out ARCH=arm "${KERNEL_DEFCONFIG}"
         make -j"$(nproc --all)" O=out \
-             ARCH=arm64 \
+             ARCH=arm \
              CC=clang \
-             CLANG_TRIPLE=aarch64-linux-gnu- \
-             CROSS_COMPILE=aarch64-linux-android- \
-             CROSS_COMPILE_ARM32=arm-linux-androideabi-
+             CLANG_TRIPLE=arm-linux-gnueabi- \
+             CROSS_COMPILE=arm-linux-androideabi-
     } 2>&1 | tee "${LOG_FILE}"
 }
 
 # --- Execution ---
 if build_kernel; then
     echo ">> Success: Kernel compiled successfully!"
-    echo ">> Your compiled build files are available in: ${KERNEL_SRC}/out/arch/arm64/boot/"
+    # CHANGED: Final binary outputs paths update to the 32-bit zImage format destination directory
+    echo ">> Your compiled build files are available in: ${KERNEL_SRC}/out/arch/arm/boot/"
 else
     echo "!! Build Failed. Check build.log"
     exit 1
