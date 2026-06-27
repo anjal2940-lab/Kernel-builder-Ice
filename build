@@ -24,7 +24,7 @@ echo ">> Setting up dependencies..."
 
 export PATH="${WORK}/clang/bin:${WORK}/x64/bin:${WORK}/x32/bin:${PATH}"
 
-# CHANGED: Shift target system global architecture from arm64 to arm
+# Target system architecture set to 32-bit ARM
 export ARCH=arm
 
 echo ">> Cloning Kernel Source..."
@@ -38,11 +38,16 @@ build_kernel() {
     
     # Capture build process to log file
     {
-        # CHANGED: Build target directory flags flipped from arm64 to arm
+        # Set up the configuration using 32-bit target architecture parameters
         make O=out ARCH=arm "${KERNEL_DEFCONFIG}"
+        
+        # Compile using BFD linker specifically to override the vDSO alignment issue
         make -j"$(nproc --all)" O=out \
              ARCH=arm \
              CC=clang \
+             HOSTCC=gcc \
+             HOSTCXX=g++ \
+             LD=arm-linux-androideabi-ld.bfd \
              CLANG_TRIPLE=arm-linux-gnueabi- \
              CROSS_COMPILE=arm-linux-androideabi-
     } 2>&1 | tee "${LOG_FILE}"
@@ -51,7 +56,7 @@ build_kernel() {
 # --- Execution ---
 if build_kernel; then
     echo ">> Success: Kernel compiled successfully!"
-    # CHANGED: Final binary outputs paths update to the 32-bit zImage format destination directory
+    # Output path directs directly to the newly produced 32-bit zImage files
     echo ">> Your compiled build files are available in: ${KERNEL_SRC}/out/arch/arm/boot/"
 else
     echo "!! Build Failed. Check build.log"
