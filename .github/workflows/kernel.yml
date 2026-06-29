@@ -44,25 +44,11 @@ jobs:
     - name: 📦 Prepare Artifacts
       id: props
       run: |
-        BUILD_DATE="$(TZ=Asia/Kolkata date +'%d-%b-%Y | %I:%M %p')"
-        echo "date=${BUILD_DATE}" >> $GITHUB_OUTPUT
+        echo "date=$(TZ=Asia/Kolkata date +'%d-%b-%Y | %I:%M %p')" >> $GITHUB_OUTPUT
         mkdir -p out_artifacts
-        
-        # Write technical report to a safe local tracking asset file
-        echo "========================================" > out_artifacts/build_report.txt
-        echo "        LOTUS KERNEL BUILD REPORT       " >> out_artifacts/build_report.txt
-        echo "========================================" >> out_artifacts/build_report.txt
-        echo "Device:       ${{ github.event.inputs.DEVICE_NAME }}" >> out_artifacts/build_report.txt
-        echo "OS Target:    ${{ github.event.inputs.ANDROID_VERSION }}" >> out_artifacts/build_report.txt
-        echo "Build Time:   ${BUILD_DATE}" >> out_artifacts/build_report.txt
-        echo "Status:       Success" >> out_artifacts/build_report.txt
-        echo "========================================" >> out_artifacts/build_report.txt
-        
         [ -f "build.log" ] && cp build.log out_artifacts/
-        
-        # Target the 64-bit boot artifacts directory safely 
-        if [ -d "myKernel/out/arch/arm64/boot" ]; then
-          find myKernel/out/arch/arm64/boot/ -maxdepth 1 -type f \( -name "Image*" -o -name "*.dtb" \) -exec cp {} out_artifacts/ \;
+        if [ -d "myKernel/out/arch/arm/boot" ]; then
+          find myKernel/out/arch/arm/boot/ -maxdepth 1 -type f \( -name "zImage*" -o -name "Image*" -o -name "*.dtb" \) -exec cp {} out_artifacts/ \;
         else
           echo "::error:: Compiled kernel output folder not found. Check build.log layout."
           exit 1
@@ -74,5 +60,4 @@ jobs:
         name: "✨ Lotus Kernel | ${{ github.event.inputs.DEVICE_NAME }} | ${{ steps.props.outputs.date }}"
         tag: "build-${{ github.run_id }}"
         token: ${{ secrets.GITHUB_TOKEN }}
-        body: "Build completed. 64-bit kernel architecture target compiled successfully. See attached build_report.txt asset file."
-
+        body: "Automated kernel compilation build completed successfully."
