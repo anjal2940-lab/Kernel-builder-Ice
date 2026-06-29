@@ -8,7 +8,7 @@ set -e
 
 # --- Configuration ---
 KERNEL_SOURCE="https://github.com/anjal2940-lab/Ice-kernel-source"
-KERNEL_BRANCH="main"
+KERNEL_BRANCH="arm"
 KERNEL_DEFCONFIG="ice_defconfig" # Ensure this config file supports 32-bit inside arch/arm/configs/
 
 # --- Paths ---
